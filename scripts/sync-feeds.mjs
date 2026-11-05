@@ -70,13 +70,29 @@ function extractItems(data) {
   }
   return [data];
 }
+function validateFeedUrl(raw) {
+  let url;
+  try { url = new URL(raw); } catch { throw new Error("Feed URL is invalid."); }
+  if (url.protocol !== "https:") throw new Error("Only HTTPS feed URLs are allowed.");
+  if (url.username || url.password) throw new Error("Feed URLs must not contain embedded credentials.");
+  const host = url.hostname.toLowerCase();
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") ||
+      /^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host) ||
+      /^169\.254\./.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+      host === "::1" || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80:")) {
+    throw new Error("Private or local feed hosts are not allowed.");
+  }
+  return url.toString();
+}
 async function fetchFeed(retailer) {
+  const feedUrl = validateFeedUrl(retailer.feed_url);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 25_000);
   try {
-    const response = await fetch(retailer.feed_url, {
+    const response = await fetch(feedUrl, {
       signal: controller.signal,
-      headers: { "user-agent": "PriceFinderFeedBot/1.0 (+https://pricefinder.md)", accept: "application/json, application/xml, text/xml, text/csv, */*" },
+      redirect: "error",
+      headers: { "user-agent": "PriceFinderFeedBot/1.0 (+https://pricefinder.md)", accept: "application/json, application/xml, text/xml, text/csv" },
     });
     if (!response.ok) throw new Error(`Feed returned HTTP ${response.status}`);
     const body = await response.text();
@@ -88,7 +104,6 @@ async function fetchFeed(retailer) {
   } finally { clearTimeout(timeout); }
 }
 async function syncRetailer(retailer) {
-  const startedAt = new Date().toISOString();
   const { data: run, error: runError } = await supabase.from("sync_runs")
     .insert({ retailer_id: retailer.id, status: "running" }).select("id").single();
   if (runError) throw runError;
@@ -102,25 +117,24 @@ async function syncRetailer(retailer) {
       const rawPrice = getField(item, mapping, "price").replace(/\s/g, "").replace(",", ".");
       const price = Number(rawPrice);
       const productUrl = getField(item, mapping, "product_url");
-      const imageUrl = getField(item, mapping, "image_url");
       const conditionRaw = getField(item, mapping, "condition").toLowerCase();
       const condition = ["used", "second hand", "second-hand", "preowned"].includes(conditionRaw) ? "used" : "new";
       let url;
       try { url = new URL(productUrl); } catch { skipped++; continue; }
-      if (!title || !Number.isFinite(price) || price <= 0 || !["http:", "https:"].includes(url.protocol)) { skipped++; continue; }
-      let image = null;
-      if (imageUrl) { try { const parsed = new URL(imageUrl); if (["http:", "https:"].includes(parsed.protocol)) image = parsed.toString(); } catch {} }
+      if (!title || !Number.isFinite(price) || price <= 0 || url.protocol !== "https:") { skipped++; continue; }
       const row = {
         retailer_id: retailer.id, title, price,
         currency: getField(item, mapping, "currency") || "MDL",
-        product_url: url.toString(), image_url: image,
-        description: getField(item, mapping, "description") || null,
+        product_url: url.toString(),
+        image_url: null,
+        description: null,
         category: getField(item, mapping, "category") || "diverse",
         condition, active: true, verified: false, sponsored: false,
         last_checked_at: new Date().toISOString(),
       };
-      const { data: existing } = await supabase.from("offers").select("id")
+      const { data: existing, error: lookupError } = await supabase.from("offers").select("id")
         .eq("retailer_id", retailer.id).eq("product_url", row.product_url).maybeSingle();
+      if (lookupError) throw lookupError;
       const { error } = await supabase.from("offers").upsert(row, { onConflict: "retailer_id,product_url" });
       if (error) throw error;
       if (existing) updated++; else imported++;
@@ -147,12 +161,16 @@ async function syncRetailer(retailer) {
     console.error(`[${retailer.name}] FAILED: ${message}`);
   }
 }
+
 const { data: retailers, error } = await supabase.from("retailers")
   .select("id,name,feed_url,feed_format,integration_type,field_mapping")
-  .eq("enabled", true).not("feed_url", "is", null).order("name");
+  .eq("enabled", true)
+  .eq("feed_authorized", true)
+  .not("feed_url", "is", null)
+  .order("name");
 if (error) throw error;
 if (!retailers?.length) {
-  console.log("No enabled retailers have a feed_url configured. No websites were scraped.");
+  console.log("No explicitly authorized retailer feeds are enabled. No websites were scraped.");
   process.exit(0);
 }
 for (const retailer of retailers) await syncRetailer(retailer);
