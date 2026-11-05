@@ -142,6 +142,7 @@ async function syncRetailer(retailer) {
         product_url: url.toString(),
         image_url: null,
         description: null,
+        specifications: getSpecifications(item, mapping),
         category: getField(item, mapping, "category") || "diverse",
         condition, active: true, verified: false, sponsored: false,
         last_checked_at: new Date().toISOString(),
