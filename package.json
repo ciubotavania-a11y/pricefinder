@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync:feeds": "node scripts/sync-feeds.mjs",
-    "crawl:darwin": "node scripts/crawl-darwin.mjs"
+    "sync:feeds": "node scripts/sync-feeds.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
