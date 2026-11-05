@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { addOffer, signOut } from "./actions";
 import { importOffersFromFile } from "./import-actions";
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ added?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ added?: string; imported?: string }> }) {
   const params = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -13,6 +13,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   return <main className="container">
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:28}}><div><h1>Panou de administrare</h1><p className="muted">Autentificat: {user.email}</p></div><form action={signOut}><button type="submit">Ieșire</button></form></div>
     {params.added && <p className="notice">Oferta a fost adăugată. Este marcată ca neverificată până la confirmarea prețului.</p>}
+    {params.imported !== undefined && <p className="notice">Import finalizat: {params.imported} produse importate cu succes. Produsele sunt marcate ca neverificate până la confirmarea prețurilor.</p>}
     
 <section className="panel">
   <h2>Importă produse din fișier</h2>
