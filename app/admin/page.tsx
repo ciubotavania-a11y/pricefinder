@@ -76,6 +76,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <p className="muted admin-description">Configurează numai feed-uri oficiale pentru care există acord scris sau licență API. Sincronizarea rulează la fiecare 30 de minute.</p>
         {(retailerFeeds ?? []).map((retailer) => <form action={updateRetailerFeed} className="admin-form" key={retailer.id}>
           <input type="hidden" name="retailer_id" value={retailer.id}/><strong>{retailer.name}</strong>
+          <small>Ultima sincronizare: {retailer.last_sync_at ? new Date(retailer.last_sync_at).toLocaleString("ro-MD") : "Niciodată"} · Status: {retailer.last_sync_status ?? "nepornit"}{retailer.last_sync_message ? ` · ${retailer.last_sync_message}` : ""}</small>
           <label>URL feed oficial<input name="feed_url" type="url" defaultValue={retailer.feed_url ?? ""} placeholder="https://magazin.md/feed.xml"/></label>
           <label>Format<select name="feed_format" defaultValue={retailer.feed_format ?? "csv"}><option value="csv">CSV</option><option value="xml">XML</option><option value="json">JSON</option><option value="api">JSON API</option></select></label>
           <label>Referință acord / licență<input name="feed_authorization_note" defaultValue={retailer.feed_authorization_note ?? ""} placeholder="Contract sau permisiune scrisă"/></label>
