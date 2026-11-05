@@ -35,7 +35,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <div className="admin-welcome"><div><span className="section-kicker">SPAȚIU DE LUCRU</span><h1>Panou de administrare</h1><p>Gestionează ofertele și produsele PriceFinder.md.</p></div><div className="admin-user"><span className="admin-avatar">A</span><span><strong>Administrator</strong><small>{user.email}</small></span></div></div>
 
       {params.added && <p className="notice">✓ Oferta a fost adăugată. Va apărea ca neverificată până la confirmarea prețului.</p>}
-      {params.imported !== undefined && <p className="notice">✓ Import finalizat: {params.imported} produse importate cu succes. Produsele sunt marcate ca neverificate.</p>}\n      {params.retailerUpdated && <p className="notice">✓ Setările feed-ului au fost salvate.</p>}
+      {params.imported !== undefined && <p className="notice">✓ Import finalizat: {params.imported} produse importate cu succes. Produsele sunt marcate ca neverificate.</p>}
+      {params.retailerUpdated && <p className="notice">✓ Setările feed-ului au fost salvate.</p>}
 
       <section className="admin-stats">
         <article><span className="stat-label">Oferte recente</span><strong>{recentOffers.length}</strong><small>Produse în lista recentă</small></article>
