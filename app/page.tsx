@@ -4,6 +4,11 @@ import type { Offer } from "@/lib/types";
 
 export const revalidate = 0;
 
+const categoryIcons: Record<string, string> = {
+  telefoane: "📱", calculatoare: "💻", televizoare: "📺", electrocasnice: "🏠",
+  auto: "🚗", mobilier: "🛋️", moda: "👟", sport: "⚽", copii: "🧸", diverse: "✨",
+};
+
 export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q : "";
@@ -17,45 +22,79 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   if (condition !== "all") query = query.eq("condition", condition);
   if (category !== "all") query = query.eq("category", category);
   query = sort === "newest" ? query.order("created_at", { ascending: false }) : query.order("price", { ascending: true });
-  const { data } = await query.limit(100);
+  const { data, error } = await query.limit(100);
   const offers = (data ?? []) as unknown as (Offer & { retailers: { name: string } | null })[];
   const { data: categoriesData } = await supabase.from("categories").select("slug,name").order("name");
   const categories = categoriesData ?? [];
 
   return <>
-    <header className="topbar"><div className="container" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><Link href="/" className="brand">PriceFinder<span>.md</span></Link><Link href="/admin/login" className="small" style={{color:"white"}}>Administrare</Link></div></header>
-    <main className="container">
-      <section className="hero">
-        <div className="pill good">COMPARĂ PREȚURI ÎN MOLDOVA</div>
-        <h1>Găsește prețul potrivit.<br/>Compară înainte să cumperi.</h1>
-        <p className="muted">Oferte de la magazine și platforme din Republica Moldova, într-un singur loc.</p>
-        <form className="searchbar" action="/">
-          <input name="q" defaultValue={q} placeholder="Caută iPhone, laptop, televizor..." />
-          <button type="submit">Caută produse</button>
-        </form>
-      </section>
-      <form className="filters" action="/">
-        <input name="q" value={q} readOnly hidden />
-        <select name="category" defaultValue={category}><option value="all">Toate categoriile</option>{categories.map(c=><option key={c.slug} value={c.slug}>{c.name}</option>)}</select>
-        <select name="condition" defaultValue={condition}><option value="all">Noi și second-hand</option><option value="new">Doar noi</option><option value="used">Second-hand</option></select>
-        <select name="sort" defaultValue={sort}><option value="price">Preț: mic la mare</option><option value="newest">Adăugate recent</option></select>
-        <button type="submit">Aplică filtre</button>
-      </form>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <h2 style={{fontSize:22,margin:0}}>Oferte disponibile</h2><span className="small">{offers.length} rezultate afișate</span>
+    <header className="site-header">
+      <div className="container header-inner">
+        <Link href="/" className="brand" aria-label="PriceFinder pagina principală"><span className="brand-mark">P</span><span>PriceFinder<span className="brand-domain">.md</span></span></Link>
+        <nav className="header-nav"><a href="#categorii">Categorii</a><a href="#oferte">Oferte</a><Link href="/admin/login" className="admin-link">Administrare <span>↗</span></Link></nav>
       </div>
-      {offers.length === 0 ? <div className="panel"><h2>Nu am găsit oferte</h2><p className="muted">În acest moment catalogul nu conține oferte publicate pentru căutarea ta. Revino mai târziu sau schimbă filtrele.</p></div> :
-      <section className="grid">{offers.map(o=><article className="card" key={o.id}>
-        <div className="product-image">{o.image_url ? <img src={o.image_url} alt={o.title} style={{width:"100%",height:"155px",objectFit:"contain"}}/> : "▧"}</div>
-        <div className="card-body">
-          <div><span className="pill">{o.condition === "new" ? "NOU" : "SECOND-HAND"}</span>{o.verified ? <span className="pill good">PREȚ VERIFICAT</span> : <span className="pill warn">NEVERIFICAT</span>}{o.sponsored && <span className="pill warn">SPONSORIZAT</span>}</div>
-          <h3 style={{fontSize:16,minHeight:40}}>{o.title}</h3>
-          <div className="price">{Number(o.price).toLocaleString("ro-MD")} {o.currency}</div>
-          <div className="small">{o.retailers?.name ?? "Comerciant"}</div>
-          <div className="card-footer"><span className="small">{o.last_checked_at ? `Verificat: ${new Date(o.last_checked_at).toLocaleDateString("ro-MD")}` : "Data verificării indisponibilă"}</span><a className="button" href={o.product_url} target="_blank" rel="noopener noreferrer">Vezi oferta ↗</a></div>
+    </header>
+
+    <main>
+      <section className="hero-section">
+        <div className="container hero-content">
+          <div className="eyebrow"><span className="live-dot"/> COMPARĂ PREȚURI DIN MOLDOVA</div>
+          <h1>Cumpără mai inteligent.<br/><span>Plătește prețul corect.</span></h1>
+          <p className="hero-copy">Descoperă și compară ofertele magazinelor din Republica Moldova. Mai multă claritate înainte de fiecare cumpărătură.</p>
+          <form className="searchbar" action="/" role="search">
+            <span className="search-icon" aria-hidden="true">⌕</span>
+            <input name="q" defaultValue={q} placeholder="Ce produs cauți astăzi?" aria-label="Caută produse"/>
+            <button type="submit">Caută <span>→</span></button>
+          </form>
+          <div className="hero-footnote"><span>✓</span> Compari ofertele într-un singur loc <span className="footnote-separator">·</span> Prețuri afișate în MDL</div>
         </div>
-      </article>)}</section>}
+        <div className="hero-decoration" aria-hidden="true"><div className="deco-circle circle-one"/><div className="deco-circle circle-two"/></div>
+      </section>
+
+      <section className="trust-strip"><div className="container trust-inner">
+        <div><span className="trust-icon">⌕</span><span><strong>Caută rapid</strong><small>Produse din mai multe surse</small></span></div>
+        <div><span className="trust-icon">⇅</span><span><strong>Compară prețuri</strong><small>Vezi ofertele una lângă alta</small></span></div>
+        <div><span className="trust-icon">✓</span><span><strong>Verifică informația</strong><small>Ofertele verificate sunt marcate</small></span></div>
+      </div></section>
+
+      <div className="container main-content">
+        <section id="categorii" className="category-section">
+          <div className="section-heading"><div><span className="section-kicker">EXPLOREAZĂ</span><h2>Categorii populare</h2></div><span className="section-aside">Alege ce te interesează</span></div>
+          <div className="category-list">
+            <Link href="/?category=all" className={category === "all" ? "category-chip selected" : "category-chip"}><span>✦</span> Toate</Link>
+            {categories.map(c=><Link key={c.slug} href={`/?category=${encodeURIComponent(c.slug)}`} className={category === c.slug ? "category-chip selected" : "category-chip"}><span>{categoryIcons[c.slug] ?? "◇"}</span>{c.name}</Link>)}
+          </div>
+        </section>
+
+        <section id="oferte" className="offers-section">
+          <div className="section-heading offers-heading"><div><span className="section-kicker">DESCOPERĂ</span><h2>{q ? `Rezultate pentru „${q}”` : "Oferte disponibile"}</h2></div><span className="result-count">{offers.length} {offers.length === 1 ? "ofertă" : "oferte"}</span></div>
+          <form className="filter-bar" action="/">
+            {q && <input type="hidden" name="q" value={q}/>}
+            <label><span>Categorie</span><select name="category" defaultValue={category}><option value="all">Toate categoriile</option>{categories.map(c=><option key={c.slug} value={c.slug}>{c.name}</option>)}</select></label>
+            <label><span>Starea produsului</span><select name="condition" defaultValue={condition}><option value="all">Toate produsele</option><option value="new">Noi</option><option value="used">Second-hand</option></select></label>
+            <label><span>Sortare</span><select name="sort" defaultValue={sort}><option value="price">Preț: mic la mare</option><option value="newest">Cele mai noi</option></select></label>
+            <button type="submit" className="filter-button">Aplică filtre</button>
+            {(q || category !== "all" || condition !== "all" || sort !== "price") && <Link href="/" className="reset-link">Resetează</Link>}
+          </form>
+
+          {error ? <div className="empty-state"><div className="empty-icon">!</div><h3>Catalogul nu este disponibil momentan</h3><p>Nu am putut încărca ofertele. Te rugăm să revii puțin mai târziu.</p></div> :
+          offers.length === 0 ? <div className="empty-state"><div className="empty-icon">⌕</div><h3>Nu am găsit oferte</h3><p>Încearcă altă căutare sau modifică filtrele. Catalogul va afișa ofertele pe măsură ce sunt adăugate.</p><Link href="/" className="reset-button">Vezi toate ofertele</Link></div> :
+          <div className="product-grid">{offers.map(o=><article className="product-card" key={o.id}>
+            <a className="product-visual" href={o.product_url} target="_blank" rel="noopener noreferrer" aria-label={`Vezi ${o.title} la comerciant`}>
+              {o.image_url ? <img src={o.image_url} alt={o.title} loading="lazy"/> : <span className="image-placeholder">◇</span>}
+              {o.sponsored && <span className="sponsored-tag">PROMOVAT</span>}
+            </a>
+            <div className="product-info">
+              <div className="product-tags"><span className={o.condition === "new" ? "tag tag-new" : "tag"}>{o.condition === "new" ? "NOU" : "SECOND-HAND"}</span>{o.verified ? <span className="tag tag-verified">✓ VERIFICAT</span> : <span className="tag tag-unverified">NEVERIFICAT</span>}</div>
+              <h3>{o.title}</h3>
+              <div className="product-price">{Number(o.price).toLocaleString("ro-MD")} <small>{o.currency}</small></div>
+              <div className="product-meta"><span>{o.retailers?.name ?? "Comerciant"}</span><span>{o.last_checked_at ? new Date(o.last_checked_at).toLocaleDateString("ro-MD") : "Data indisponibilă"}</span></div>
+              <a className="offer-link" href={o.product_url} target="_blank" rel="noopener noreferrer">Vezi oferta <span>↗</span></a>
+            </div>
+          </article>)}</div>}
+        </section>
+      </div>
     </main>
-    <footer><div className="container">PriceFinder.md — platformă de comparare a ofertelor. Prețurile și disponibilitatea se confirmă pe site-ul comerciantului. Ofertele sponsorizate sunt marcate.</div></footer>
+    <footer className="site-footer"><div className="container footer-inner"><Link href="/" className="brand footer-brand"><span className="brand-mark">P</span><span>PriceFinder<span className="brand-domain">.md</span></span></Link><p>Compară informat. Cumpără inspirat.</p><small>Prețurile și disponibilitatea se confirmă pe site-ul comerciantului. Ofertele promovate sunt marcate.</small><span className="copyright">© {new Date().getFullYear()} PriceFinder.md</span></div></footer>
   </>;
 }
