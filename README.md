@@ -23,12 +23,13 @@ Proiectul NU este încă publicat și NU are încă un cont/bază de date Supaba
 3. Creează un proiect Supabase și deschide SQL Editor.
 4. Copiază tot conținutul din `supabase/schema.sql` în SQL Editor și apasă Run.
 5. În Supabase: Project Settings → API. Copiază Project URL și anon/public key.
-6. Creează fișierul `.env.local` în rădăcina proiectului, după modelul `.env.example`:
+6. Creează utilizatorul administrator în Supabase Authentication → Users, folosind emailul care va fi setat în `ADMIN_EMAIL`.
+7. Deschide `supabase/admin-security.sql`, înlocuiește `ADMIN_EMAIL_HERE` cu emailul administratorului și rulează tot SQL-ul în Supabase → SQL Editor. Acesta înregistrează administratorul și configurează politicile RLS pentru scriere.
+8. Creează fișierul `.env.local` în rădăcina proiectului, după modelul `.env.example`:
    - `NEXT_PUBLIC_SUPABASE_URL=...`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY=...`
    - `ADMIN_EMAIL=emailul_tău`
-7. În Supabase Authentication → Users, creează utilizatorul administrator cu acel email și o parolă puternică.
-8. În terminal, în folderul proiectului, execută:
+9. În terminal, în folderul proiectului, execută:
    ```bash
    npm install
    npm run dev
@@ -37,8 +38,8 @@ Proiectul NU este încă publicat și NU are încă un cont/bază de date Supaba
 
 ## Notă de securitate înainte de producție
 - Nu publica niciodată `SUPABASE_SERVICE_ROLE_KEY` în browser sau în codul client.
-- Politicile RLS trebuie verificate în proiectul Supabase înainte de activarea scrierilor în producție. Configurează o politică admin cu o metodă sigură, de exemplu o funcție SQL/rol dedicat sau un tabel de administratori; nu te baza doar pe ascunderea paginii.
-- Setarea `ADMIN_EMAIL` din server protejează ruta UI, dar pentru producție trebuie aplicată și la nivel de bază de date. În schema de pornire, politica admin este intenționat un punct de configurare și trebuie adaptată la proiectul Supabase înainte de publicare.
+- Rulează `supabase/admin-security.sql` după schema principală și după crearea utilizatorului Auth administrator. Fără acest pas, adăugarea/importul ofertelor poate fi refuzat de RLS.
+- `ADMIN_EMAIL` protejează ruta UI, iar tabelul `admin_users` și funcția `is_pricefinder_admin()` protejează operațiile la nivelul bazei de date. Nu te baza doar pe ascunderea paginii.
 - Adaugă validare URL, protecție anti-spam, limitare de cereri și jurnal de audit înainte de lansare.
 
 ## Importuri comercianți
