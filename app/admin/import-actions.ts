@@ -56,18 +56,24 @@ function parseCSV(text: string): Record<string, unknown>[] {
   );
 }
 
-function extractProducts(data: any): Record<string, unknown>[] {
-  if (Array.isArray(data)) return data;
+function extractProducts(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) {
+    return data.filter(
+      (item): item is Record<string, unknown> =>
+        typeof item === "object" && item !== null && !Array.isArray(item)
+    );
+  }
   if (!data || typeof data !== "object") return [];
 
+  const record = data as Record<string, unknown>;
   for (const key of ["products", "product", "items", "item", "offers", "offer"]) {
-    if (data[key] !== undefined) {
-      const result = extractProducts(data[key]);
+    if (record[key] !== undefined) {
+      const result = extractProducts(record[key]);
       if (result.length) return result;
     }
   }
 
-  return [data];
+  return [record];
 }
 
 function field(item: Record<string, unknown>, names: string[]) {
