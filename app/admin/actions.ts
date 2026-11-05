@@ -38,3 +38,65 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect("/");
 }
+
+
+export async function updateRetailerFeed(formData: FormData) {
+  const supabase = await requireAdmin();
+  const retailerId = String(formData.get("retailer_id") || "").trim();
+  const feedUrlInput = String(formData.get("feed_url") || "").trim();
+  const feedFormat = String(formData.get("feed_format") || "").trim();
+  const authorizationNote = String(formData.get("feed_authorization_note") || "").trim();
+  const feedAuthorized = formData.get("feed_authorized") === "on";
+
+  if (!retailerId) throw new Error("Magazinul selectat nu este valid.");
+  if (feedUrlInput && !["csv", "xml", "json", "api"].includes(feedFormat)) {
+    throw new Error("Alege formatul feed-ului.");
+  }
+  if (feedAuthorized && !authorizationNote) {
+    throw new Error("Adaugă referința acordului sau licenței înainte de activare.");
+  }
+
+  const { data: retailer, error: retailerError } = await supabase
+    .from("retailers")
+    .select("id,website")
+    .eq("id", retailerId)
+    .maybeSingle();
+  if (retailerError || !retailer) throw new Error("Magazinul nu a fost găsit.");
+
+  let feedUrl: string | null = null;
+  if (feedUrlInput) {
+    let parsed: URL;
+    let official: URL;
+    try {
+      parsed = new URL(feedUrlInput);
+      official = new URL(retailer.website);
+    } catch {
+      throw new Error("Adresa feed-ului sau site-ul comerciantului nu este valid.");
+    }
+    const host = parsed.hostname.toLowerCase();
+    const officialHost = official.hostname.toLowerCase();
+    if (
+      parsed.protocol !== "https:" ||
+      parsed.username ||
+      parsed.password ||
+      !(host === officialHost || host.endsWith("." + officialHost))
+    ) {
+      throw new Error("Feed-ul trebuie să folosească HTTPS și domeniul oficial al comerciantului (sau un subdomeniu al acestuia).");
+    }
+    feedUrl = parsed.toString();
+  }
+
+  const { error } = await supabase.from("retailers").update({
+    feed_url: feedUrl,
+    feed_format: feedUrl ? feedFormat : null,
+    integration_type: feedUrl ? feedFormat : "manual",
+    feed_authorized: Boolean(feedUrl && feedAuthorized),
+    feed_authorization_note: authorizationNote || null,
+    feed_authorized_at: feedUrl && feedAuthorized ? new Date().toISOString() : null,
+  }).eq("id", retailerId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect("/admin?retailerUpdated=1");
+}
