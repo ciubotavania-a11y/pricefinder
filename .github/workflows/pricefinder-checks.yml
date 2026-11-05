@@ -1,4 +1,4 @@
-name: PriceFinder checks and feed sync
+name: PriceFinder checks and authorized feed sync
 
 on:
   pull_request:
@@ -29,8 +29,8 @@ jobs:
         run: npm ci
       - name: Check lint
         run: npm run lint
-      - name: Check Darwin crawler syntax
-        run: node --check scripts/crawl-darwin.mjs
+      - name: Check feed sync syntax
+        run: node --check scripts/sync-feeds.mjs
       - name: Build application
         run: npm run build
 
@@ -47,14 +47,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Synchronize authorized retailer feeds
+      - name: Synchronize feeds explicitly authorized by retailers
         run: npm run sync:feeds
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      - name: Crawl Darwin catalog (requires explicit authorization)
-        run: npm run crawl:darwin
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          DARWIN_CRAWL_AUTHORIZED: ${{ vars.DARWIN_CRAWL_AUTHORIZED }}
