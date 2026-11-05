@@ -41,6 +41,20 @@ function getField(item, mapping, fieldName) {
   }
   return "";
 }
+function getSpecifications(item, mapping) {
+  const configured = mapping?.specifications;
+  const raw = configured ? getPath(item, configured) :
+    item?.specifications ?? item?.attributes ?? item?.characteristics ?? item?.features;
+  if (!raw || typeof raw !== "object") return {};
+  const entries = Array.isArray(raw)
+    ? raw.map((entry) => [entry?.name ?? entry?.key ?? entry?.label, entry?.value])
+    : Object.entries(raw);
+  return Object.fromEntries(entries
+    .filter(([key, value]) => typeof key === "string" && key.trim() && (typeof value === "string" || typeof value === "number" || typeof value === "boolean"))
+    .slice(0, 20)
+    .map(([key, value]) => [key.trim().slice(0, 80), String(value).trim().slice(0, 160)])
+    .filter(([, value]) => value));
+}
 function parseCsv(input) {
   const rows = [];
   let row = [], cell = "", quoted = false;
