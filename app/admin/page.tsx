@@ -17,8 +17,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.email !== process.env.ADMIN_EMAIL) redirect("/admin/login");
 
-  const [{ data: retailers }, { data: offers }] = await Promise.all([
+  const [{ data: retailers }, { data: retailerFeeds }, { data: offers }] = await Promise.all([
     supabase.from("retailers").select("id,name").eq("enabled", true).order("name"),
+    supabase.from("retailers").select("id,name,website,feed_url,feed_format,feed_authorized,feed_authorization_note,last_sync_at,last_sync_status,last_sync_message").order("name"),
     supabase.from("offers").select("id,title,price,currency,condition,verified,active,retailers(name)").order("created_at", { ascending: false }).limit(30),
   ]);
   const retailerOptions = (retailers ?? []) as RetailerOption[];
@@ -69,6 +70,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         </section>
       </div>
 
+      <section className="panel admin-panel admin-table-panel">
+        <div className="admin-panel-heading"><div><span className="section-kicker">INTEGRĂRI AUTORIZATE</span><h2>Feed-uri comercianți</h2></div></div>
+        <p className="muted admin-description">Configurează numai feed-uri oficiale pentru care există acord scris sau licență API. Sincronizarea rulează la fiecare 30 de minute.</p>
+        {(retailerFeeds ?? []).map((retailer) => <form action={updateRetailerFeed} className="admin-form" key={retailer.id}>
+          <input type="hidden" name="retailer_id" value={retailer.id}/><strong>{retailer.name}</strong>
+          <label>URL feed oficial<input name="feed_url" type="url" defaultValue={retailer.feed_url ?? ""} placeholder="https://magazin.md/feed.xml"/></label>
+          <label>Format<select name="feed_format" defaultValue={retailer.feed_format ?? "csv"}><option value="csv">CSV</option><option value="xml">XML</option><option value="json">JSON</option><option value="api">JSON API</option></select></label>
+          <label>Referință acord / licență<input name="feed_authorization_note" defaultValue={retailer.feed_authorization_note ?? ""} placeholder="Contract sau permisiune scrisă"/></label>
+          <label><input type="checkbox" name="feed_authorized" defaultChecked={Boolean(retailer.feed_authorized)}/> Confirm existența permisiunii scrise sau licenței aplicabile.</label>
+          <button type="submit" className="admin-submit">Salvează setările →</button>
+        </form>)}
+      </section>
       <section className="panel admin-panel admin-table-panel">
         <div className="admin-panel-heading"><div><span className="section-kicker">ACTIVITATE</span><h2>Ultimele produse adăugate</h2></div><span className="result-count">{recentOffers.length} înregistrări</span></div>
         {recentOffers.length === 0 ? <p className="muted">Nu există produse adăugate încă.</p> : <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Produs</th><th>Comerciant</th><th>Preț</th><th>Stare</th><th>Verificare</th></tr></thead><tbody>{recentOffers.map((offer)=><tr key={offer.id}><td><strong>{offer.title}</strong></td><td>{offer.retailers?.name ?? "—"}</td><td>{Number(offer.price).toLocaleString("ro-MD")} {offer.currency}</td><td>{offer.condition === "new" ? "Nou" : "Second-hand"}</td><td><span className={offer.verified ? "admin-status verified" : "admin-status pending"}>{offer.verified ? "Verificat" : "Neverificat"}</span></td></tr>)}</tbody></table></div>}
