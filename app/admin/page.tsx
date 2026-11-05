@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { addOffer, signOut } from "./actions";
+import { addOffer, signOut, updateRetailerFeed } from "./actions";
 import { importOffersFromFile } from "./import-actions";
 
 type RetailerOption = { id: string; name: string };
@@ -11,7 +11,7 @@ type AdminOffer = {
   retailers: { name: string } | null;
 };
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ added?: string; imported?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ added?: string; imported?: string; retailerUpdated?: string }> }) {
   const params = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -34,7 +34,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <div className="admin-welcome"><div><span className="section-kicker">SPAȚIU DE LUCRU</span><h1>Panou de administrare</h1><p>Gestionează ofertele și produsele PriceFinder.md.</p></div><div className="admin-user"><span className="admin-avatar">A</span><span><strong>Administrator</strong><small>{user.email}</small></span></div></div>
 
       {params.added && <p className="notice">✓ Oferta a fost adăugată. Va apărea ca neverificată până la confirmarea prețului.</p>}
-      {params.imported !== undefined && <p className="notice">✓ Import finalizat: {params.imported} produse importate cu succes. Produsele sunt marcate ca neverificate.</p>}
+      {params.imported !== undefined && <p className="notice">✓ Import finalizat: {params.imported} produse importate cu succes. Produsele sunt marcate ca neverificate.</p>}\n      {params.retailerUpdated && <p className="notice">✓ Setările feed-ului au fost salvate.</p>}
 
       <section className="admin-stats">
         <article><span className="stat-label">Oferte recente</span><strong>{recentOffers.length}</strong><small>Produse în lista recentă</small></article>
