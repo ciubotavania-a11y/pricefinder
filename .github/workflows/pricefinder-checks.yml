@@ -50,3 +50,9 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Crawl Darwin catalog (requires explicit authorization)
+        run: npm run crawl:darwin
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DARWIN_CRAWL_AUTHORIZED: ${{ vars.DARWIN_CRAWL_AUTHORIZED }}
