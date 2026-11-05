@@ -164,6 +164,7 @@ async function syncRetailer(retailer) {
       last_sync_message: `Importate: ${imported}; actualizate: ${updated}; ignorate: ${skipped}`,
     }).eq("id", retailer.id);
     console.log(`[${retailer.name}] ${status}: +${imported}, ~${updated}, skipped ${skipped}`);
+    return true;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await supabase.from("sync_runs").update({
@@ -174,6 +175,7 @@ async function syncRetailer(retailer) {
       last_sync_message: message.slice(0, 1000),
     }).eq("id", retailer.id);
     console.error(`[${retailer.name}] FAILED: ${message}`);
+    return false;
   }
 }
 
@@ -188,4 +190,12 @@ if (!retailers?.length) {
   console.log("No explicitly authorized retailer feeds are enabled. No websites were scraped.");
   process.exit(0);
 }
-for (const retailer of retailers) await syncRetailer(retailer);
+let failedRetailers = 0;
+for (const retailer of retailers) {
+  const succeeded = await syncRetailer(retailer);
+  if (!succeeded) failedRetailers++;
+}
+if (failedRetailers > 0) {
+  console.error(`Feed sync failed for ${failedRetailers} retailer(s).`);
+  process.exitCode = 1;
+}
