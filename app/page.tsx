@@ -17,7 +17,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const sort = typeof params.sort === "string" ? params.sort : "price";
   const supabase = await createClient();
 
-  let query = supabase.from("offers").select("id,title,description,category,condition,price,currency,product_url,image_url,retailer_id,last_checked_at,verified,sponsored,retailers(name)").eq("active", true);
+  let query = supabase.from("offers").select("id,title,description,category,condition,price,currency,product_url,image_url,specifications,retailer_id,last_checked_at,verified,sponsored,retailers(name)").eq("active", true);
   if (q) query = query.ilike("title", `%${q}%`);
   if (condition !== "all") query = query.eq("condition", condition);
   if (category !== "all") query = query.eq("category", category);
@@ -87,6 +87,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
             <div className="product-info">
               <div className="product-tags"><span className={o.condition === "new" ? "tag tag-new" : "tag"}>{o.condition === "new" ? "NOU" : "SECOND-HAND"}</span>{o.verified ? <span className="tag tag-verified">✓ VERIFICAT</span> : <span className="tag tag-unverified">NEVERIFICAT</span>}</div>
               <h3>{o.title}</h3>
+              {o.specifications && Object.keys(o.specifications).length > 0 && <ul className="product-specifications">{Object.entries(o.specifications).slice(0, 6).map(([key, value]) => <li key={key}><strong>{key}:</strong> {value}</li>)}</ul>}
               <div className="product-price">{Number(o.price).toLocaleString("ro-MD")} <small>{o.currency}</small></div>
               <div className="product-meta"><span>{o.retailers?.name ?? "Comerciant"}</span><span>{o.last_checked_at ? new Date(o.last_checked_at).toLocaleDateString("ro-MD") : "Data indisponibilă"}</span></div>
               <a className="offer-link" href={o.product_url} target="_blank" rel="noopener noreferrer">Vezi oferta <span>↗</span></a>
