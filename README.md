@@ -56,7 +56,7 @@ Motorul de sincronizare este în `scripts/sync-feeds.mjs` și poate importa feed
 
 ### Activare
 
-1. Rulează o singură dată `supabase/automatic-sync.sql` în Supabase SQL Editor, după schema principală și `admin-security.sql`.
+1. În Supabase SQL Editor, rulează în această ordine, câte un fișier complet și apasă Run după fiecare: `supabase/schema.sql` (dacă nu a fost deja rulat), `supabase/admin-security.sql` (după crearea utilizatorului Auth administrator), `supabase/legal-feed-authorization.sql`, `supabase/product-specifications.sql`, apoi `supabase/automatic-sync.sql`. Primele două trebuie să existe înaintea migrărilor noi: motorul de sincronizare folosește coloanele `feed_authorized` și `specifications`, iar SQL-ul de sincronizare adaugă tabelele și indexul necesar. Nu activa niciun feed până când nu ai verificat permisiunea comerciantului.
 2. În GitHub → repository Settings → Secrets and variables → Actions, creează:
    - `SUPABASE_URL`: Project URL (fără `/rest/v1/`).
    - `SUPABASE_SERVICE_ROLE_KEY`: cheia secretă server-side din Supabase. Nu o pune în `.env.local` public, în cod sau în browser și nu o trimite în conversație.
