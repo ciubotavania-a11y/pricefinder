@@ -44,7 +44,8 @@ async function getText(target, accept = "text/html,application/xml,text/xml") {
   } finally { clearTimeout(timer); }
 }
 function parseRobots(text) {
-  const lines = text.split(/\r?\n/);
+  const lines = text.split(/\r?
+/);
   let applies = false, disallow = [], delay = 2;
   for (const raw of lines) {
     const line = raw.split("#")[0].trim();
@@ -86,7 +87,26 @@ function priceFrom(product) {
   if (!Number.isFinite(price) || price <= 0) return null;
   return { price, currency: String(offers?.priceCurrency || "MDL").toUpperCase() };
 }
-function textValue(value) {\n  if (typeof value === "string" || typeof value === "number") return String(value).trim();\n  if (value && typeof value === "object") return String(value.name || value.value || "").trim();\n  return "";\n}\nfunction categoryFrom(product) {\n  const raw = textValue(product.category).toLowerCase();\n  const name = `${product.name || ""} ${raw}`.toLowerCase();\n  if (/phone|iphone|samsung galaxy|smartphone|telefon/.test(name)) return "telefoane";\n  if (/laptop|notebook|computer|desktop|pc|monitor|tablet/.test(name)) return "calculatoare";\n  if (/tv|television|televizor|oled|qled/.test(name)) return "televizoare";\n  if (/fridge|refrigerator|washing machine|vacuum|oven|microwave|frigider|masina de spalat/.test(name)) return "electrocasnice";\n  if (/car|auto|anvelop|piese auto/.test(name)) return "auto";\n  if (/sofa|chair|table|furniture|canapea|scaun|mobilier/.test(name)) return "mobilier";\n  if (/shoe|sneaker|clothing|jacket|pant|shirt|incaltaminte|haine/.test(name)) return "moda";\n  if (/sport|fitness|bicycle|bicicleta/.test(name)) return "sport";\n  if (/toy|baby|child|jucarie|copil/.test(name)) return "copii";\n  return "diverse";\n}\nfunction imageFrom(product, base) {
+function textValue(value) {
+  if (typeof value === "string" || typeof value === "number") return String(value).trim();
+  if (value && typeof value === "object") return String(value.name || value.value || "").trim();
+  return "";
+}
+function categoryFrom(product) {
+  const raw = textValue(product.category).toLowerCase();
+  const name = `${product.name || ""} ${raw}`.toLowerCase();
+  if (/phone|iphone|samsung galaxy|smartphone|telefon/.test(name)) return "telefoane";
+  if (/laptop|notebook|computer|desktop|pc|monitor|tablet/.test(name)) return "calculatoare";
+  if (/tv|television|televizor|oled|qled/.test(name)) return "televizoare";
+  if (/fridge|refrigerator|washing machine|vacuum|oven|microwave|frigider|masina de spalat/.test(name)) return "electrocasnice";
+  if (/car|auto|anvelop|piese auto/.test(name)) return "auto";
+  if (/sofa|chair|table|furniture|canapea|scaun|mobilier/.test(name)) return "mobilier";
+  if (/shoe|sneaker|clothing|jacket|pant|shirt|incaltaminte|haine/.test(name)) return "moda";
+  if (/sport|fitness|bicycle|bicicleta/.test(name)) return "sport";
+  if (/toy|baby|child|jucarie|copil/.test(name)) return "copii";
+  return "diverse";
+}
+function imageFrom(product, base) {
   const raw = Array.isArray(product.image) ? product.image[0] : product.image;
   const u = safeUrl(typeof raw === "string" ? raw : raw?.url, base);
   return u?.toString() || null;
