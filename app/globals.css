@@ -171,3 +171,37 @@ button,.button{border:0;border-radius:9px;padding:12px 16px;background:var(--tea
 .comparison-row a{width:27px;height:27px;display:grid;place-items:center;border-radius:7px;background:#eaf5f2;color:var(--teal);font-weight:800}
 .comparison-card>small{display:block;margin-top:12px;color:#929ba7;font-size:10px}
 @media(max-width:650px){.comparison-grid{grid-template-columns:1fr}}
+
+
+/* Product detail and price history */
+.detail-shell{min-height:100vh;background:#f7f9fa;padding:32px 0 70px}
+.detail-back{display:inline-block;margin:0 0 18px;color:var(--teal);font-size:13px;font-weight:700}
+.detail-card{display:grid;grid-template-columns:minmax(260px,.85fr) 1.15fr;gap:30px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:25px}
+.detail-image{min-height:300px;display:grid;place-items:center;background:#f7f8fa;border-radius:12px;overflow:hidden;color:#c2cbd3;font-size:60px}
+.detail-image img{width:100%;height:100%;max-height:420px;object-fit:contain;padding:22px}
+.detail-content{align-self:center}
+.detail-content>.section-kicker{display:block;margin-top:18px}
+.detail-content h1{font-size:clamp(25px,4vw,38px);letter-spacing:-1px;line-height:1.2;margin:8px 0 12px}
+.detail-description{font-size:14px;line-height:1.7;color:#687486}
+.detail-price{font-size:34px;font-weight:850;letter-spacing:-1px;margin:18px 0 8px;color:#142d2c}
+.detail-price small{font-size:14px;color:#7d8793;letter-spacing:0}
+.detail-retailer{font-size:13px;color:#748091}
+.detail-buy{display:inline-block;margin-top:10px;padding:13px 17px;border-radius:9px;background:var(--teal);color:#fff;font-size:13px;font-weight:800}
+.detail-disclaimer{font-size:11px;line-height:1.5;color:#8992a0;margin-top:13px}
+.detail-section{margin-top:35px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px}
+.detail-section h2{font-size:22px;letter-spacing:-.5px;margin:7px 0 18px}
+.specification-list{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
+.specification-list>div{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #edf0f3;font-size:12px}
+.specification-list dt{color:#7b8795}.specification-list dd{margin:0;text-align:right;font-weight:700}
+.history-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.history-summary>div{padding:14px;background:#f6f8f9;border-radius:9px}
+.history-summary small,.history-summary strong{display:block}
+.history-summary small{font-size:10px;color:#7b8795;margin-bottom:7px}
+.history-summary strong{font-size:16px;letter-spacing:-.3px}
+.history-table-wrap{overflow-x:auto}
+.history-table{width:100%;border-collapse:collapse;text-align:left;font-size:12px}
+.history-table th{padding:11px;background:#f7f9fa;color:#778293;font-size:10px}
+.history-table td{padding:12px;border-bottom:1px solid #edf0f3}
+.history-table td:last-child{text-align:right;font-weight:800}
+.history-empty{padding:15px;background:#f7f9fa;border-radius:9px;color:#778293;font-size:12px;line-height:1.6}
+@media(max-width:700px){.detail-shell{padding-top:20px}.detail-card{grid-template-columns:1fr;padding:14px;gap:18px}.detail-image{min-height:220px}.detail-section{padding:17px}.history-summary{grid-template-columns:1fr}.specification-list{grid-template-columns:1fr}}
