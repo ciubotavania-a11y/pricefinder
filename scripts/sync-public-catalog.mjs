@@ -44,8 +44,7 @@ async function getText(target, accept = "text/html,application/xml,text/xml") {
   } finally { clearTimeout(timer); }
 }
 function parseRobots(text) {
-  const lines = text.split(/\r?
-/);
+  const lines = text.split(/\r?\n/);
   let applies = false, disallow = [], delay = 2;
   for (const raw of lines) {
     const line = raw.split("#")[0].trim();
