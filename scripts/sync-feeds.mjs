@@ -140,8 +140,14 @@ async function syncRetailer(retailer) {
         retailer_id: retailer.id, title, price,
         currency: getField(item, mapping, "currency") || "MDL",
         product_url: url.toString(),
-        image_url: null,
-        description: null,
+        image_url: (() => {
+          const raw = getField(item, mapping, "image_url");
+          try {
+            const image = new URL(raw);
+            return image.protocol === "https:" ? image.toString() : null;
+          } catch { return null; }
+        })(),
+        description: getField(item, mapping, "description").slice(0, 2000) || null,
         specifications: getSpecifications(item, mapping),
         category: getField(item, mapping, "category") || "diverse",
         condition, active: true, verified: false, sponsored: false,
