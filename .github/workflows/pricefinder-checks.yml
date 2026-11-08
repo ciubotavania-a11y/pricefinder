@@ -1,4 +1,4 @@
-name: PriceFinder checks and authorized feed sync
+name: PriceFinder checks and catalog sync
 
 on:
   pull_request:
@@ -18,35 +18,34 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: build-only-placeholder
       ADMIN_EMAIL: admin@example.com
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Check lint
-        run: npm run lint
-      - name: Check feed sync syntax
-        run: node --check scripts/sync-feeds.mjs
-      - name: Build application
-        run: npm run build
+      - run: npm ci
+      - run: npm run lint
+      - run: node --check scripts/sync-feeds.mjs
+      - run: node --check scripts/sync-public-catalog.mjs
+      - run: npm run build
 
   sync-feeds:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Synchronize feeds explicitly authorized by retailers
+      - run: npm ci
+      - name: Sync explicitly authorized feeds
         run: npm run sync:feeds
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Discover products on permitted public pages
+        run: npm run sync:public
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
