@@ -28,7 +28,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const prices = history.map((point) => Number(point.price)).filter(Number.isFinite);
   const lowest = prices.length ? Math.min(...prices) : Number(offer.price);
   const highest = prices.length ? Math.max(...prices) : Number(offer.price);
-  const retailer = offer.retailers as { name: string; website: string } | null;
+  const retailerData = offer.retailers as unknown as { name: string; website: string }[] | { name: string; website: string } | null;
+  const retailer = Array.isArray(retailerData) ? retailerData[0] ?? null : retailerData;
   const specifications = offer.specifications as Record<string, string> | null;
 
   return (
