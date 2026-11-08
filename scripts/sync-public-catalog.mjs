@@ -86,7 +86,7 @@ function priceFrom(product) {
   if (!Number.isFinite(price) || price <= 0) return null;
   return { price, currency: String(offers?.priceCurrency || "MDL").toUpperCase() };
 }
-function imageFrom(product, base) {
+function textValue(value) {\n  if (typeof value === "string" || typeof value === "number") return String(value).trim();\n  if (value && typeof value === "object") return String(value.name || value.value || "").trim();\n  return "";\n}\nfunction categoryFrom(product) {\n  const raw = textValue(product.category).toLowerCase();\n  const name = `${product.name || ""} ${raw}`.toLowerCase();\n  if (/phone|iphone|samsung galaxy|smartphone|telefon/.test(name)) return "telefoane";\n  if (/laptop|notebook|computer|desktop|pc|monitor|tablet/.test(name)) return "calculatoare";\n  if (/tv|television|televizor|oled|qled/.test(name)) return "televizoare";\n  if (/fridge|refrigerator|washing machine|vacuum|oven|microwave|frigider|masina de spalat/.test(name)) return "electrocasnice";\n  if (/car|auto|anvelop|piese auto/.test(name)) return "auto";\n  if (/sofa|chair|table|furniture|canapea|scaun|mobilier/.test(name)) return "mobilier";\n  if (/shoe|sneaker|clothing|jacket|pant|shirt|incaltaminte|haine/.test(name)) return "moda";\n  if (/sport|fitness|bicycle|bicicleta/.test(name)) return "sport";\n  if (/toy|baby|child|jucarie|copil/.test(name)) return "copii";\n  return "diverse";\n}\nfunction imageFrom(product, base) {
   const raw = Array.isArray(product.image) ? product.image[0] : product.image;
   const u = safeUrl(typeof raw === "string" ? raw : raw?.url, base);
   return u?.toString() || null;
@@ -131,7 +131,7 @@ async function syncStore(store) {
         retailer_id: store.id, title: title.slice(0, 300), price: pricing.price,
         currency: pricing.currency, product_url: productUrl.toString(),
         image_url: imageFrom(product, page), description: String(product.description || "").slice(0, 2000) || null,
-        category: "diverse", condition: "new", active: true, verified: false, sponsored: false,
+        category: categoryFrom(product), brand: textValue(product.brand), sku: textValue(product.sku || product.productID || product.mpn), gtin: textValue(product.gtin13 || product.gtin || product.gtin12 || product.gtin14 || product.isbn), condition: "new", active: true, verified: false, sponsored: false,
         last_checked_at: new Date().toISOString()
       };
       const { data: existing, error: lookupError } = await db.from("offers").select("id")
