@@ -118,7 +118,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
             </a>
             <div className="product-info">
               <div className="product-tags"><span className={o.condition === "new" ? "tag tag-new" : "tag"}>{o.condition === "new" ? "NOU" : "SECOND-HAND"}</span>{o.verified ? <span className="tag tag-verified">✓ VERIFICAT</span> : <span className="tag tag-unverified">NEVERIFICAT</span>}</div>
-              <h3>{o.title}</h3>
+              <h3><Link href={`/produs/${o.id}`}>{o.title}</Link></h3>
               {o.specifications && Object.keys(o.specifications).length > 0 && <ul className="product-specifications">{Object.entries(o.specifications).slice(0, 6).map(([key, value]) => <li key={key}><strong>{key}:</strong> {value}</li>)}</ul>}
               <div className="product-price">{Number(o.price).toLocaleString("ro-MD")} <small>{o.currency}</small></div>
               <div className="product-meta"><span>{o.retailers?.name ?? "Comerciant"}</span><span>{o.last_checked_at ? new Date(o.last_checked_at).toLocaleDateString("ro-MD") : "Data indisponibilă"}</span></div>
