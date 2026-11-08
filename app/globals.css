@@ -155,3 +155,19 @@ button,.button{border:0;border-radius:9px;padding:12px 16px;background:var(--tea
 .login-back{display:block;text-align:center;color:var(--teal);font-size:11px;font-weight:700;margin-top:22px}
 .login-foot{margin-top:23px;color:#929ba7;font-size:10px;text-align:center}
 @media(max-width:480px){.login-card{padding:25px 21px}.login-card h1{font-size:25px}}
+
+
+/* Price comparison cards */
+.comparison-section{margin:0 0 48px}
+.comparison-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.comparison-card{border:1px solid var(--line);border-radius:13px;padding:17px;background:#fff}
+.comparison-card h3{font-size:15px;line-height:1.4;margin:0 0 5px}
+.comparison-subtitle{margin:0 0 13px;color:#8992a0;font-size:11px}
+.comparison-rows{display:grid;gap:8px}
+.comparison-row{display:grid;grid-template-columns:1fr auto 28px;align-items:center;gap:10px;padding:10px;border-radius:8px;background:#f7f9fa}
+.comparison-rank{font-size:11px;color:#667085}
+.comparison-row:first-child .comparison-rank{color:var(--teal);font-weight:800}
+.comparison-row strong{font-size:13px;white-space:nowrap}
+.comparison-row a{width:27px;height:27px;display:grid;place-items:center;border-radius:7px;background:#eaf5f2;color:var(--teal);font-weight:800}
+.comparison-card>small{display:block;margin-top:12px;color:#929ba7;font-size:10px}
+@media(max-width:650px){.comparison-grid{grid-template-columns:1fr}}
