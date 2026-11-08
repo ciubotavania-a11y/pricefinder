@@ -27,6 +27,24 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const { data: categoriesData } = await supabase.from("categories").select("slug,name").order("name");
   const categories = categoriesData ?? [];
 
+  // Grupăm ofertele cu denumiri identice pentru comparația între comercianți.
+  const comparisonGroups = new Map<string, typeof offers>();
+  for (const offer of offers) {
+    const key = offer.title.toLocaleLowerCase("ro")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ").trim();
+    if (!key) continue;
+    const group = comparisonGroups.get(key) ?? [];
+    group.push(offer);
+    comparisonGroups.set(key, group);
+  }
+  const comparableProducts = [...comparisonGroups.values()]
+    .map((group) => [...new Map(group.map((offer) => [offer.retailer_id, offer])).values()]
+      .sort((a, b) => Number(a.price) - Number(b.price)))
+    .filter((group) => group.length > 1)
+    .sort((a, b) => Number(a[0].price) - Number(b[0].price))
+    .slice(0, 8);
+
   return <>
     <header className="site-header">
       <div className="container header-inner">
@@ -65,6 +83,20 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
             {categories.map(c=><Link key={c.slug} href={`/?category=${encodeURIComponent(c.slug)}`} className={category === c.slug ? "category-chip selected" : "category-chip"}><span>{categoryIcons[c.slug] ?? "◇"}</span>{c.name}</Link>)}
           </div>
         </section>
+
+        {comparableProducts.length > 0 && <section className="comparison-section">
+          <div className="section-heading"><div><span className="section-kicker">COMPARĂ INTELIGENT</span><h2>Același produs, prețuri diferite</h2></div><span className="result-count">{comparableProducts.length} comparații</span></div>
+          <div className="comparison-grid">{comparableProducts.map((group) => <article className="comparison-card" key={group[0].title}>
+            <h3>{group[0].title}</h3>
+            <p className="comparison-subtitle">{group.length} comercianți comparați</p>
+            <div className="comparison-rows">{group.map((offer, index) => <div className="comparison-row" key={offer.id}>
+              <span className="comparison-rank">{index === 0 ? "Cel mai mic" : offer.retailers?.name ?? "Magazin"}</span>
+              <strong>{Number(offer.price).toLocaleString("ro-MD")} {offer.currency}</strong>
+              <a href={offer.product_url} target="_blank" rel="noopener noreferrer" aria-label={`Vezi oferta de la ${offer.retailers?.name ?? "comerciant"}`}>↗</a>
+            </div>)}</div>
+            <small>Prețurile trebuie confirmate pe site-ul comerciantului.</small>
+          </article>)}</div>
+        </section>}
 
         <section id="oferte" className="offers-section">
           <div className="section-heading offers-heading"><div><span className="section-kicker">DESCOPERĂ</span><h2>{q ? `Rezultate pentru „${q}”` : "Oferte disponibile"}</h2></div><span className="result-count">{offers.length} {offers.length === 1 ? "ofertă" : "oferte"}</span></div>
