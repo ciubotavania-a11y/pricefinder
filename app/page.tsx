@@ -31,7 +31,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const comparisonGroups = new Map<string, typeof offers>();
   for (const offer of offers) {
     const key = offer.title.toLocaleLowerCase("ro")
-      .normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, " ").trim();
     if (!key) continue;
     const group = comparisonGroups.get(key) ?? [];
