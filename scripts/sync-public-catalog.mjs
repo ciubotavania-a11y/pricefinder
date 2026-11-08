@@ -17,15 +17,30 @@ function safeUrl(raw, base) {
   } catch { return null; }
 }
 async function getText(target, accept = "text/html,application/xml,text/xml") {
+  const initialUrl = safeUrl(target);
+  if (!initialUrl) return null;
+  const expectedHost = initialUrl.hostname.toLowerCase();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(target, { signal: controller.signal, redirect: "follow",
-      headers: { "user-agent": UA, accept } });
-    if (!response.ok) return null;
-    const finalUrl = new URL(response.url);
-    if (finalUrl.protocol !== "https:") return null;
-    return { body: await response.text(), contentType: response.headers.get("content-type") || "", url: finalUrl };
+    let currentUrl = initialUrl;
+    for (let redirects = 0; redirects <= 5; redirects++) {
+      const response = await fetch(currentUrl, { signal: controller.signal, redirect: "manual",
+        headers: { "user-agent": UA, accept } });
+      if ([301, 302, 303, 307, 308].includes(response.status)) {
+        const location = response.headers.get("location");
+        if (!location || redirects === 5) return null;
+        const nextUrl = safeUrl(location, currentUrl);
+        if (!nextUrl || nextUrl.hostname.toLowerCase() !== expectedHost) return null;
+        currentUrl = nextUrl;
+        continue;
+      }
+      if (!response.ok) return null;
+      const finalUrl = new URL(response.url || currentUrl.toString());
+      if (finalUrl.protocol !== "https:" || finalUrl.hostname.toLowerCase() !== expectedHost) return null;
+      return { body: await response.text(), contentType: response.headers.get("content-type") || "", url: finalUrl };
+    }
+    return null;
   } finally { clearTimeout(timer); }
 }
 function parseRobots(text) {
