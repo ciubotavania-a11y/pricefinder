@@ -33,10 +33,8 @@ function parseCSV(text: string): Record<string, unknown>[] {
     } else if (char === "," && !quoted) {
       row.push(cell.trim());
       cell = "";
-    } else if ((char === "
-" || char === "\r") && !quoted) {
-      if (char === "\r" && text[i + 1] === "
-") i++;
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && text[i + 1] === "\n") i++;
       row.push(cell.trim());
       if (row.some(Boolean)) rows.push(row);
       row = [];
