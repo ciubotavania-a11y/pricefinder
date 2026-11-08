@@ -77,7 +77,7 @@ begin
   values (new.id, new.retailer_id, new.price, new.currency);
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists offers_initial_price_history_trigger on public.offers;
 create trigger offers_initial_price_history_trigger
