@@ -9,7 +9,7 @@ Acesta este un starter funcțional pentru dezvoltarea PriceFinder.md. Include:
 - schemă PostgreSQL și surse inițiale.
 
 ## Important
-Proiectul NU este încă publicat și NU are încă un cont/bază de date Supabase conectată. Nu conține prețuri reale importate automat. Magazinele inițiale sunt doar surse înregistrate în director. Pentru import automat este necesar un API, feed de produse sau acord/permisiune de la fiecare comerciant. Nu elimina eticheta de verificare fără confirmarea prețului.
+Proiectul nu este încă publicat. Proiectul Supabase a fost creat, iar conectarea efectivă a aplicației și a workerului depinde de configurarea variabilelor de mediu și a secretelor GitHub Actions. Nu presupune că există deja prețuri reale importate automat: magazinele inițiale sunt doar surse înregistrate în director. Pentru import automat este necesar un API, feed de produse sau acord/permisiune de la fiecare comerciant. Nu elimina eticheta de verificare fără confirmarea prețului.
 
 ## De ce ai nevoie
 1. Un calculator Windows sau Mac (configurarea este mult mai simplă decât pe telefon).
