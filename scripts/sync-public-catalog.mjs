@@ -44,7 +44,8 @@ async function getText(target, accept = "text/html,application/xml,text/xml") {
   } finally { clearTimeout(timer); }
 }
 function parseRobots(text) {
-  const lines = text.split(/\r?\n/);
+  const lines = text.split(/\r?
+/);
   let applies = false, disallow = [], delay = 2;
   for (const raw of lines) {
     const line = raw.split("#")[0].trim();
@@ -85,6 +86,25 @@ function priceFrom(product) {
   const price = Number(String(raw ?? "").replace(/\s/g, "").replace(",", "."));
   if (!Number.isFinite(price) || price <= 0) return null;
   return { price, currency: String(offers?.priceCurrency || "MDL").toUpperCase() };
+}
+function textValue(value) {
+  if (typeof value === "string" || typeof value === "number") return String(value).trim();
+  if (value && typeof value === "object") return String(value.name || value.value || "").trim();
+  return "";
+}
+function categoryFrom(product) {
+  const raw = textValue(product.category).toLowerCase();
+  const name = `${product.name || ""} ${raw}`.toLowerCase();
+  if (/phone|iphone|samsung galaxy|smartphone|telefon/.test(name)) return "telefoane";
+  if (/laptop|notebook|computer|desktop|pc|monitor|tablet/.test(name)) return "calculatoare";
+  if (/tv|television|televizor|oled|qled/.test(name)) return "televizoare";
+  if (/fridge|refrigerator|washing machine|vacuum|oven|microwave|frigider|masina de spalat/.test(name)) return "electrocasnice";
+  if (/car|auto|anvelop|piese auto/.test(name)) return "auto";
+  if (/sofa|chair|table|furniture|canapea|scaun|mobilier/.test(name)) return "mobilier";
+  if (/shoe|sneaker|clothing|jacket|pant|shirt|incaltaminte|haine/.test(name)) return "moda";
+  if (/sport|fitness|bicycle|bicicleta/.test(name)) return "sport";
+  if (/toy|baby|child|jucarie|copil/.test(name)) return "copii";
+  return "diverse";
 }
 function imageFrom(product, base) {
   const raw = Array.isArray(product.image) ? product.image[0] : product.image;
@@ -131,7 +151,7 @@ async function syncStore(store) {
         retailer_id: store.id, title: title.slice(0, 300), price: pricing.price,
         currency: pricing.currency, product_url: productUrl.toString(),
         image_url: imageFrom(product, page), description: String(product.description || "").slice(0, 2000) || null,
-        category: "diverse", condition: "new", active: true, verified: false, sponsored: false,
+        category: categoryFrom(product), brand: textValue(product.brand), sku: textValue(product.sku || product.productID || product.mpn), gtin: textValue(product.gtin13 || product.gtin || product.gtin12 || product.gtin14 || product.isbn), condition: "new", active: true, verified: false, sponsored: false,
         last_checked_at: new Date().toISOString()
       };
       const { data: existing, error: lookupError } = await db.from("offers").select("id")

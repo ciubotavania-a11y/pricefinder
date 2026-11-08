@@ -17,7 +17,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const sort = typeof params.sort === "string" ? params.sort : "price";
   const supabase = await createClient();
 
-  let query = supabase.from("offers").select("id,title,description,category,condition,price,currency,product_url,image_url,specifications,retailer_id,last_checked_at,verified,sponsored,retailers(name)").eq("active", true);
+  let query = supabase.from("offers").select("id,title,description,category,condition,price,currency,product_url,image_url,brand,sku,gtin,specifications,retailer_id,last_checked_at,verified,sponsored,retailers(name)").eq("active", true);
   if (q) query = query.ilike("title", `%${q}%`);
   if (condition !== "all") query = query.eq("condition", condition);
   if (category !== "all") query = query.eq("category", category);
@@ -30,7 +30,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   // Grupăm ofertele cu denumiri identice pentru comparația între comercianți.
   const comparisonGroups = new Map<string, typeof offers>();
   for (const offer of offers) {
-    const key = offer.title.toLocaleLowerCase("ro")
+    const key = offer.gtin ? `gtin:${offer.gtin}` : offer.title.toLocaleLowerCase("ro")
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, " ").trim();
     if (!key) continue;

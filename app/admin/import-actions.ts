@@ -33,8 +33,10 @@ function parseCSV(text: string): Record<string, unknown>[] {
     } else if (char === "," && !quoted) {
       row.push(cell.trim());
       cell = "";
-    } else if ((char === "\n" || char === "\r") && !quoted) {
-      if (char === "\r" && text[i + 1] === "\n") i++;
+    } else if ((char === "
+" || char === "\r") && !quoted) {
+      if (char === "\r" && text[i + 1] === "
+") i++;
       row.push(cell.trim());
       if (row.some(Boolean)) rows.push(row);
       row = [];
@@ -137,6 +139,9 @@ export async function importOffersFromFile(formData: FormData) {
     const productUrl = field(product, ["product_url", "url", "link"]);
     const imageUrl = field(product, ["image_url", "image", "picture"]);
     const description = field(product, ["description"]);
+    const brand = field(product, ["brand", "manufacturer"]);
+    const sku = field(product, ["sku", "id", "product_id", "mpn"]);
+    const gtin = field(product, ["gtin", "gtin13", "ean", "barcode", "upc"]);
     const category = field(product, ["category"]) || "diverse";
     const condition = field(product, ["condition"]) || "new";
 
