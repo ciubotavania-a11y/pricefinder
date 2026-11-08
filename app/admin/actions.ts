@@ -100,3 +100,25 @@ export async function updateRetailerFeed(formData: FormData) {
   revalidatePath("/admin");
   redirect("/admin?retailerUpdated=1");
 }
+
+
+export async function updatePublicCrawl(formData: FormData) {
+  const supabase = await requireAdmin();
+  const retailerId = String(formData.get("retailer_id") || "").trim();
+  const enabled = formData.get("public_crawl_enabled") === "on";
+  const authorizationNote = String(formData.get("public_crawl_authorization_note") || "").trim();
+
+  if (!retailerId) throw new Error("Magazinul selectat nu este valid.");
+  if (enabled && !authorizationNote) {
+    throw new Error("Adaugă mai întâi referința care confirmă că scanarea publică este permisă.");
+  }
+
+  const { error } = await supabase.from("retailers").update({
+    public_crawl_enabled: enabled,
+    public_crawl_authorization_note: authorizationNote || null,
+  }).eq("id", retailerId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin");
+  redirect("/admin?retailerUpdated=1");
+}
