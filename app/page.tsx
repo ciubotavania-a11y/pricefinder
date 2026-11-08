@@ -17,7 +17,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const sort = typeof params.sort === "string" ? params.sort : "price";
   const supabase = await createClient();
 
-  let query = supabase.from("offers").select("id,title,description,category,condition,price,currency,product_url,image_url,specifications,retailer_id,last_checked_at,verified,sponsored,retailers(name)").eq("active", true);
+  let query = supabase.from("offers").select("id,title,description,category,condition,price,currency,product_url,image_url,brand,sku,gtin,specifications,retailer_id,last_checked_at,verified,sponsored,retailers(name)").eq("active", true);
   if (q) query = query.ilike("title", `%${q}%`);
   if (condition !== "all") query = query.eq("condition", condition);
   if (category !== "all") query = query.eq("category", category);
