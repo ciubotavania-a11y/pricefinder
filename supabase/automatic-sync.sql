@@ -71,7 +71,7 @@ for each row execute function public.record_offer_price_change();
 create or replace function public.record_initial_offer_price()
 returns trigger
 language plpgsql
-as $
+as $$
 begin
   insert into public.price_history(offer_id, retailer_id, price, currency)
   values (new.id, new.retailer_id, new.price, new.currency);
