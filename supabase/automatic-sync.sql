@@ -68,6 +68,22 @@ create trigger offers_price_history_trigger
 after update of price, currency on public.offers
 for each row execute function public.record_offer_price_change();
 
+create or replace function public.record_initial_offer_price()
+returns trigger
+language plpgsql
+as $
+begin
+  insert into public.price_history(offer_id, retailer_id, price, currency)
+  values (new.id, new.retailer_id, new.price, new.currency);
+  return new;
+end;
+$;
+
+drop trigger if exists offers_initial_price_history_trigger on public.offers;
+create trigger offers_initial_price_history_trigger
+after insert on public.offers
+for each row execute function public.record_initial_offer_price();
+
 alter table public.sync_runs enable row level security;
 alter table public.price_history enable row level security;
 
