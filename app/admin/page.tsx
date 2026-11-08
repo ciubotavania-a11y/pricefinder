@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { addOffer, signOut, updateRetailerFeed } from "./actions";
+import { addOffer, signOut, updateRetailerFeed, updatePublicCrawl } from "./actions";
 import { importOffersFromFile } from "./import-actions";
 
 type RetailerOption = { id: string; name: string };
@@ -19,7 +19,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const [{ data: retailers }, { data: retailerFeeds }, { data: offers }] = await Promise.all([
     supabase.from("retailers").select("id,name").eq("enabled", true).order("name"),
-    supabase.from("retailers").select("id,name,website,feed_url,feed_format,feed_authorized,feed_authorization_note,last_sync_at,last_sync_status,last_sync_message").order("name"),
+    supabase.from("retailers").select("id,name,website,feed_url,feed_format,feed_authorized,feed_authorization_note,public_crawl_enabled,public_crawl_authorization_note,last_sync_at,last_sync_status,last_sync_message").order("name"),
     supabase.from("offers").select("id,title,price,currency,condition,verified,active,retailers(name)").order("created_at", { ascending: false }).limit(30),
   ]);
   const retailerOptions = (retailers ?? []) as RetailerOption[];
@@ -74,15 +74,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <section className="panel admin-panel admin-table-panel">
         <div className="admin-panel-heading"><div><span className="section-kicker">INTEGRĂRI AUTORIZATE</span><h2>Feed-uri comercianți</h2></div></div>
         <p className="muted admin-description">Configurează numai feed-uri oficiale pentru care există acord scris sau licență API. Sincronizarea rulează la fiecare 30 de minute.</p>
-        {(retailerFeeds ?? []).map((retailer) => <form action={updateRetailerFeed} className="admin-form" key={retailer.id}>
-          <input type="hidden" name="retailer_id" value={retailer.id}/><strong>{retailer.name}</strong>
+        {(retailerFeeds ?? []).map((retailer) => <div className="admin-form" key={retailer.id}>
+          <strong>{retailer.name}</strong>
           <small>Ultima sincronizare: {retailer.last_sync_at ? new Date(retailer.last_sync_at).toLocaleString("ro-MD") : "Niciodată"} · Status: {retailer.last_sync_status ?? "nepornit"}{retailer.last_sync_message ? ` · ${retailer.last_sync_message}` : ""}</small>
-          <label>URL feed oficial<input name="feed_url" type="url" defaultValue={retailer.feed_url ?? ""} placeholder="https://magazin.md/feed.xml"/></label>
-          <label>Format<select name="feed_format" defaultValue={retailer.feed_format ?? "csv"}><option value="csv">CSV</option><option value="xml">XML</option><option value="json">JSON</option><option value="api">JSON API</option></select></label>
-          <label>Referință acord / licență<input name="feed_authorization_note" defaultValue={retailer.feed_authorization_note ?? ""} placeholder="Contract sau permisiune scrisă"/></label>
-          <label><input type="checkbox" name="feed_authorized" defaultChecked={Boolean(retailer.feed_authorized)}/> Confirm existența permisiunii scrise sau licenței aplicabile.</label>
-          <button type="submit" className="admin-submit">Salvează setările →</button>
-        </form>)}
+          <form action={updateRetailerFeed} className="admin-form">
+            <input type="hidden" name="retailer_id" value={retailer.id}/>
+            <label>URL feed oficial<input name="feed_url" type="url" defaultValue={retailer.feed_url ?? ""} placeholder="https://magazin.md/feed.xml"/></label>
+            <label>Format<select name="feed_format" defaultValue={retailer.feed_format ?? "csv"}><option value="csv">CSV</option><option value="xml">XML</option><option value="json">JSON</option><option value="api">JSON API</option></select></label>
+            <label>Referință acord / licență<input name="feed_authorization_note" defaultValue={retailer.feed_authorization_note ?? ""} placeholder="Contract sau permisiune scrisă"/></label>
+            <label><input type="checkbox" name="feed_authorized" defaultChecked={Boolean(retailer.feed_authorized)}/> Confirm existența permisiunii scrise sau licenței aplicabile.</label>
+            <button type="submit" className="admin-submit">Salvează feed-ul →</button>
+          </form>
+          <form action={updatePublicCrawl} className="admin-form">
+            <input type="hidden" name="retailer_id" value={retailer.id}/>
+            <label>Notă privind condițiile de acces public<input name="public_crawl_authorization_note" defaultValue={retailer.public_crawl_authorization_note ?? ""} placeholder="URL termeni / confirmare că accesul automat este permis"/></label>
+            <label><input type="checkbox" name="public_crawl_enabled" defaultChecked={Boolean(retailer.public_crawl_enabled)}/> Activează descoperirea produselor din pagini publice pentru acest magazin.</label>
+            <small>Activează numai după verificarea termenilor magazinului și a robots.txt. Robotul nu ocolește autentificări, CAPTCHA sau restricții tehnice.</small>
+            <button type="submit" className="admin-submit">Salvează scanarea publică →</button>
+          </form>
+        </div>)}
       </section>
       <section className="panel admin-panel admin-table-panel">
         <div className="admin-panel-heading"><div><span className="section-kicker">ACTIVITATE</span><h2>Ultimele produse adăugate</h2></div><span className="result-count">{recentOffers.length} înregistrări</span></div>
