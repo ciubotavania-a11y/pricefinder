@@ -4,14 +4,14 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [pricefinder-redesign]
+    branches: [main, pricefinder-redesign]
   workflow_dispatch:
   schedule:
     - cron: "*/30 * * * *"
 
 jobs:
   validate:
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
@@ -45,8 +45,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install dependencies
-        run: npm ci
       - name: Synchronize feeds explicitly authorized by retailers
         run: npm run sync:feeds
         env:
