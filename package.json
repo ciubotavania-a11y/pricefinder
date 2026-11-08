@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync:feeds": "node scripts/sync-feeds.mjs"
+    "sync:feeds": "node scripts/sync-feeds.mjs",
+    "sync:public": "node scripts/sync-public-catalog.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
