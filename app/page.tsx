@@ -30,7 +30,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   // Grupăm ofertele cu denumiri identice pentru comparația între comercianți.
   const comparisonGroups = new Map<string, typeof offers>();
   for (const offer of offers) {
-    const key = offer.title.toLocaleLowerCase("ro")
+    const key = offer.gtin ? `gtin:${offer.gtin}` : offer.title.toLocaleLowerCase("ro")
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, " ").trim();
     if (!key) continue;
