@@ -44,6 +44,43 @@ async function getText(target, accept = "text/html,application/xml,text/xml") {
   } finally { clearTimeout(timer); }
 }
 function parseRobots(text) {
+  const groups = [];
+  let group = null;
+  let hasDirectives = false;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.split("#")[0].trim();
+    const i = line.indexOf(":");
+    if (i < 0) continue;
+    const key = line.slice(0, i).trim().toLowerCase();
+    const value = line.slice(i + 1).trim();
+    if (key === "user-agent") {
+      if (!group || hasDirectives) {
+        group = { agents: [], rules: [], delays: [] };
+        groups.push(group);
+        hasDirectives = false;
+      }
+      group.agents.push(value.toLowerCase());
+    } else if (group && key === "disallow" && value) {
+      group.rules.push({ type: "disallow", value });
+      hasDirectives = true;
+    } else if (group && key === "allow" && value) {
+      group.rules.push({ type: "allow", value });
+      hasDirectives = true;
+    } else if (group && key === "crawl-delay" && value) {
+      const delay = Number(value);
+      if (Number.isFinite(delay) && delay >= 0) group.delays.push(delay);
+      hasDirectives = true;
+    }
+  }
+  const exact = groups.filter(g => g.agents.some(agent => agent !== "*" && agent.includes("pricefinderbot")));
+  const selected = exact.length ? exact : groups.filter(g => g.agents.includes("*"));
+  return {
+    rules: selected.flatMap(g => g.rules),
+    delay: Math.min(10, Math.max(2, ...selected.flatMap(g => g.delays), 2))
+  };
+}
+function ruleMatches(path, rule) {
+  const escaped = rule.value.replace(/[.+?^${}()|[\]\\]/g, "\\function parseRobots(text) {
   const lines = text.split(/\r?\n/);
   let applies = false, disallow = [], delay = 2;
   for (const raw of lines) {
@@ -59,6 +96,19 @@ function parseRobots(text) {
 }
 function allowed(path, rules) {
   return !rules.disallow.some(rule => rule === "/" || (rule && path.startsWith(rule)));
+}")
+    .replace(/\\*/g, ".*");
+  const anchored = rule.value.endsWith("$");
+  const pattern = new RegExp("^" + escaped.replace(/\\\\\$/, "") + (anchored ? "$" : ""));
+  return pattern.test(path);
+}
+function allowed(path, rules) {
+  const matches = rules.rules.filter(rule => ruleMatches(path, rule));
+  if (!matches.length) return true;
+  const specificity = rule => rule.value.replace(/[\*$]/g, "").length;
+  matches.sort((a, b) => specificity(b) - specificity(a) ||
+    (a.type === "allow" ? -1 : 1));
+  return matches[0].type === "allow";
 }
 function extractProductNodes(html) {
   const found = [];
