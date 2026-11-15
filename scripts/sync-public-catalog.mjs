@@ -80,32 +80,18 @@ function parseRobots(text) {
   };
 }
 function ruleMatches(path, rule) {
-  const escaped = rule.value.replace(/[.+?^${}()|[\]\\]/g, "\\function parseRobots(text) {
-  const lines = text.split(/\r?\n/);
-  let applies = false, disallow = [], delay = 2;
-  for (const raw of lines) {
-    const line = raw.split("#")[0].trim();
-    const i = line.indexOf(":");
-    if (i < 0) continue;
-    const key = line.slice(0, i).trim().toLowerCase(), value = line.slice(i + 1).trim();
-    if (key === "user-agent") applies = value === "*" || /pricefinderbot/i.test(value);
-    else if (applies && key === "disallow" && value) disallow.push(value);
-    else if (applies && key === "crawl-delay") delay = Math.min(10, Math.max(2, Number(value) || 2));
-  }
-  return { disallow, delay };
-}
-function allowed(path, rules) {
-  return !rules.disallow.some(rule => rule === "/" || (rule && path.startsWith(rule)));
-}")
-    .replace(/\\*/g, ".*");
   const anchored = rule.value.endsWith("$");
-  const pattern = new RegExp("^" + escaped.replace(/\\\\\$/, "") + (anchored ? "$" : ""));
-  return pattern.test(path);
+  const raw = anchored ? rule.value.slice(0, -1) : rule.value;
+  const source = [...raw].map(char => {
+    if (char === "*") return ".*";
+    return char.replace(/[.+?^\${}()|[\]\\]/g, "\\$&");
+  }).join("");
+  return new RegExp("^" + source + (anchored ? "$" : "")).test(path);
 }
 function allowed(path, rules) {
   const matches = rules.rules.filter(rule => ruleMatches(path, rule));
   if (!matches.length) return true;
-  const specificity = rule => rule.value.replace(/[\*$]/g, "").length;
+  const specificity = rule => rule.value.replace(/[*$]/g, "").length;
   matches.sort((a, b) => specificity(b) - specificity(a) ||
     (a.type === "allow" ? -1 : 1));
   return matches[0].type === "allow";
