@@ -50,41 +50,85 @@ Fiecare comerciant se activează separat:
 Nu extrage automat cataloage sau anunțuri fără drept/permisiune. Pentru 999.md și Makler.md trebuie verificate condițiile API și permisiunile de utilizare.
 
 
-## Sincronizare automată a feed-urilor (fundație tehnică)
+## Sincronizare automată și configurarea Supabase
 
-Motorul de sincronizare este în `scripts/sync-feeds.mjs` și poate importa feed-uri autorizate CSV, XML sau JSON/API. Rulează secvențial, validează URL-urile și prețurile, actualizează oferta existentă pe cheia magazin + URL și nu marchează automat ofertele ca verificate.
+PriceFinder are două căi separate de colectare:
+- `scripts/sync-feeds.mjs`: importă feed-uri CSV, XML sau JSON/API furnizate sau autorizate de comerciant;
+- `scripts/sync-public-catalog.mjs`: descoperă produse publice numai pentru magazine activate explicit, după verificarea condițiilor de acces și a regulilor `robots.txt`.
 
-### Activare
+Ambele sunt programate în GitHub Actions la fiecare 30 de minute. O rulare reușită a workflow-ului nu înseamnă automat că s-au importat produse: dacă nu există surse activate, workerul se încheie fără colectare.
 
-1. În Supabase SQL Editor, rulează în această ordine, câte un fișier complet și apasă Run după fiecare: `supabase/schema.sql` (dacă nu a fost deja rulat), `supabase/admin-security.sql` (după crearea utilizatorului Auth administrator), `supabase/legal-feed-authorization.sql`, `supabase/product-specifications.sql`, apoi `supabase/automatic-sync.sql`. Primele două trebuie să existe înaintea migrărilor noi: motorul de sincronizare folosește coloanele `feed_authorized` și `specifications`, iar SQL-ul de sincronizare adaugă tabelele și indexul necesar. Nu activa niciun feed până când nu ai verificat permisiunea comerciantului.
-2. În GitHub → repository Settings → Secrets and variables → Actions, creează:
-   - `SUPABASE_URL`: Project URL (fără `/rest/v1/`).
-   - `SUPABASE_SERVICE_ROLE_KEY`: cheia secretă server-side din Supabase. Nu o pune în `.env.local` public, în cod sau în browser și nu o trimite în conversație.
-3. Pentru fiecare comerciant care a furnizat un feed/API și a permis importul, completează `feed_url` și `feed_format` în tabela `retailers`. Exemplu (înlocuiește numai cu un URL de feed real, autorizat):
-   ```sql
-   update public.retailers
-   set feed_url = 'https://merchant.example/feed.xml',
-       feed_format = 'xml',
-       integration_type = 'xml'
-   where name = 'Numele magazinului';
-   ```
-4. Dacă denumirile câmpurilor din feed diferă de cele standard, setează `field_mapping` cu căile corespunzătoare, de exemplu:
-   ```sql
-   update public.retailers
-   set field_mapping = '{"title":"product.name","price":"pricing.current","product_url":"url"}'::jsonb
-   where name = 'Numele magazinului';
-   ```
-5. Test manual din Codespaces: `npm run sync:feeds`, cu variabilele de mediu server-side disponibile. Nu afișa și nu copia cheia secretă în terminalul partajat.
-6. GitHub Actions este configurat cu un program la fiecare 30 de minute. Programările GitHub Actions rulează automat numai din ramura implicită a repository-ului; pentru activare continuă, această modificare trebuie integrată în `main`. Până atunci se poate folosi workflow_dispatch pe ramura de lucru.
+### Ordinea migrărilor SQL
 
-### Comportament și limite
+În Supabase → SQL Editor, verifică dacă schema de bază există deja. Dacă baza este nouă, rulează fișierele în ordinea următoare, fiecare separat:
 
-- Magazinele fără `feed_url` sunt ignorate; nu se face scraping arbitrar al site-urilor.
-- Feed-urile trebuie să fie oferite sau permise de comerciant și să aibă structură compatibilă ori mapare configurată.
-- Ofertele importate rămân `verified = false`; sincronizarea nu certifică disponibilitatea sau corectitudinea comercială.
-- Modificările de preț sunt păstrate în `price_history`; execuțiile sunt în `sync_runs`.
-- Feed-urile care nu includ toate produsele nu dezactivează automat ofertele absente, pentru a evita ascunderea eronată a produselor.
-- Cheia `SUPABASE_SERVICE_ROLE_KEY` este folosită doar în GitHub Actions secrets de către worker și nu trebuie expusă clientului.
+1. `supabase/schema.sql`
+2. Creează utilizatorul administrator în Supabase Authentication → Users.
+3. `supabase/admin-security.sql` — înlocuiește `ADMIN_EMAIL_HERE` cu adresa exactă a utilizatorului administrator înainte de rulare.
+4. `supabase/legal-feed-authorization.sql`
+5. `supabase/product-identifiers.sql`
+6. `supabase/product-specifications.sql`
+7. `supabase/automatic-sync.sql`
+8. `supabase/public-catalog-discovery.sql`
+9. `supabase/public-crawl-authorization-note.sql`
+10. `supabase/public-price-history.sql` — opțional, pentru citirea publică a istoricului prețurilor ofertelor active.
+
+Dacă schema de bază și unele migrări au fost deja aplicate, nu este necesar să le rulezi din nou decât dacă fișierul este idempotent și știi ce efect are; verifică mai întâi coloanele, tabelele și politicile existente. Nu rula `schema.sql` peste o bază de producție fără să verifici politicile și structura deja existente.
+
+### Secrete GitHub Actions
+
+În GitHub → repository → Settings → Secrets and variables → Actions, configurează:
+
+- `SUPABASE_URL`: Project URL din Supabase.
+- `SUPABASE_SERVICE_ROLE_KEY`: cheia service-role, păstrată exclusiv ca secret GitHub Actions.
+
+Nu publica cheia service-role în cod, în browser, în fișierele `.env` comise în Git sau în conversații. Workerul o folosește numai în execuțiile server-side GitHub Actions.
+
+### Activarea unui feed autorizat
+
+Completează `feed_url`, `feed_format` și `field_mapping` pentru magazinul care a furnizat feed-ul ori a acordat permisiunea. Apoi setează `feed_authorized = true` numai după ce permisiunea a fost verificată și documentată.
+
+Exemplu de configurare (înlocuiește URL-ul cu feed-ul real primit de la comerciant):
+
+```sql
+update public.retailers
+set feed_url = 'https://merchant.example/feed.xml',
+    feed_format = 'xml',
+    integration_type = 'xml',
+    feed_authorized = true,
+    feed_authorization_note = 'Referință internă la acordul/permisiunea verificată'
+where name = 'Numele magazinului';
+```
+
+Dacă structura feed-ului diferă de denumirile standard, configurează maparea:
+
+```sql
+update public.retailers
+set field_mapping = '{"title":"product.name","price":"pricing.current","product_url":"url"}'::jsonb
+where name = 'Numele magazinului';
+```
+
+### Activarea descoperirii paginilor publice
+
+Nu activa `public_crawl_enabled` doar pentru că un site este accesibil public. Verifică mai întâi termenii comerciantului, `robots.txt` și orice restricții relevante. Înregistrează referința verificării în `public_crawl_authorization_note`, apoi activează numai magazinul permis:
+
+```sql
+update public.retailers
+set public_crawl_enabled = true,
+    public_crawl_authorization_note = 'Referință internă la verificarea termenilor și robots.txt'
+where name = 'Numele magazinului';
+```
+
+Crawlerul folosește HTTPS, verifică `robots.txt`, limitează numărul de pagini și respectă un interval minim între cereri. Dacă `robots.txt` nu poate fi citit, magazinul este ignorat. Nu ocolește autentificări, paywall-uri, CAPTCHA sau alte controale de acces. Nota internă nu reprezintă ea însăși o permisiune.
+
+### Testare și interpretarea rezultatelor
+
+- Pornește manual workflow-ul din GitHub Actions pentru a testa sincronizarea după configurarea secretelor și a surselor.
+- Verifică `retailers.last_sync_status`, `retailers.last_sync_message`, tabelul `sync_runs` și `price_history`.
+- `No explicitly authorized retailer feeds are enabled` înseamnă că nu există feed activ autorizat.
+- `No stores have public crawling enabled` înseamnă că nu există magazin activat pentru descoperire publică.
+- Ofertele importate rămân `verified = false`; importul nu confirmă automat prețul sau disponibilitatea.
+- Lipsa unui produs dintr-un feed nu dezactivează automat oferta existentă.
 
 ## Următoarele etape
 1. Finalizarea politicilor RLS și a rolurilor de admin.
